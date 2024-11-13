@@ -2,10 +2,10 @@ from flask import Flask, render_template, request, redirect, session
 import sqlite3 as ms
 from werkzeug.security import generate_password_hash, check_password_hash
 
-app = Flask(__name__)  # Initializing Flask app
-app.secret_key = 'vivaproj'  # Secret key for session management
+app = Flask(__name__)  
+app.secret_key = 'vivaproj'  
 
-# Database setup
+# Database 
 def mysql_db():
     conn = ms.connect('health_monitoring.db')
     cursor = conn.cursor()
@@ -33,10 +33,10 @@ def mysql_db():
     conn.commit()
     conn.close()
 
-# Call this to ensure tables are created
-mysql_db()
+mysql_db() 
 
-# User Registration Route
+
+# User Registration 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -52,10 +52,11 @@ def register():
                 return redirect('/login')
             except ms.IntegrityError:
                 return "Registration failed. Email might already be registered."
-    
-    return render_template('register.html')  # This will load register.html
 
-# User Login Route
+    return render_template('register.html')
+
+
+# User Login 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -72,10 +73,11 @@ def login():
                 return redirect('/dashboard')
             else:
                 return "Login failed. Check email or password."
-    
-    return render_template('login.html')  # This will load login.html
 
-# User Dashboard Route
+    return render_template('login.html')
+
+
+# User Dashboard 
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' in session:
@@ -84,11 +86,12 @@ def dashboard():
             cursor.execute("SELECT * FROM health_metrics WHERE user_id = ?", (session['user_id'],))
             data = cursor.fetchall()
 
-        return render_template('dashboard.html', data=data, name=session['name'])  # Load dashboard.html
+        return render_template('dashboard.html', data=data, name=session['name'])
 
     return redirect('/login')
 
-# Input Vitals Route
+
+# Input Vitals 
 @app.route('/input_vitals', methods=['GET', 'POST'])
 def input_vitals():
     if request.method == 'POST':
@@ -102,34 +105,24 @@ def input_vitals():
 
         with ms.connect('health_monitoring.db') as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                '''INSERT INTO health_metrics (user_id, date, heart_rate, blood_pressure, weight, steps_walked, calories_burned) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)''', 
-                (user_id, date, heart_rate, blood_pressure, weight, steps_walked, calories_burned)
-            )
+            cursor.execute('''
+                INSERT INTO health_metrics (user_id, date, heart_rate, blood_pressure, weight, steps_walked, calories_burned) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (user_id, date, heart_rate, blood_pressure, weight, steps_walked, calories_burned))
             conn.commit()
 
         return redirect('/dashboard')
 
-    return '''
-    <form method="post">
-        Date: <input type="date" name="date"><br>
-        Heart Rate: <input type="number" name="heart_rate"><br>
-        Blood Pressure: <input type="text" name="blood_pressure"><br>
-        Weight: <input type="number" name="weight" step="0.1"><br>
-        Steps Walked: <input type="number" name="steps_walked"><br>
-        Calories Burned: <input type="number" name="calories_burned" step="0.1"><br>
-        <input type="submit" value="Submit Vitals">
-    </form>
-    '''  # Keep this simple form for now
+    return render_template('input_vitals.html')
 
-# Logout Route
+
+# Logout 
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
     session.pop('name', None)
     return redirect('/login')
 
+
 if __name__ == '__main__':
     app.run(debug=True, port=8000)
-
